@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Solo Store | Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .cart-drawer {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 relative overflow-x-hidden">
+    <div id="overlay" onclick="toggleCart()"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300">
+    </div>
+    <div id="cartDrawer"
+        class="cart-drawer fixed top-0 right-0 h-full w-full max-w-md bg-white z-[70] shadow-2xl translate-x-full flex flex-col">
+        <div class="p-6 border-b flex justify-between items-center">
+            <h2 class="text-2xl font-extrabold tracking-tight">Your Cart</h2>
+            <button onclick="toggleCart()" class="p-2 hover:bg-slate-100 rounded-full transition">&times;</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6 space-y-4">
+            {% for item in cart %}
+            <div class="flex justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div>
+                    <h4 class="font-bold">{{ item.name }}</h4>
+                    <p class="text-xs text-slate-400">Qty: {{ item.quantity }}</p>
+                </div>
+                <span class="font-black text-indigo-600">${{ item.price * item.quantity }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="p-8 border-t bg-slate-50">
+            <div class="flex justify-between mb-8"><span class="font-bold text-slate-400 text-xs">TOTAL</span><span
+                    class="text-3xl font-black">${{ total }}</span></div>
+            <a href="/process_checkout"
+                class="flex justify-center w-full bg-slate-900 text-white py-5 rounded-2xl font-extrabold text-sm hover:bg-indigo-600 transition">Checkout
+                Now</a>
+            <a href="/clear_cart" class="block text-center text-xs font-bold text-red-500 mt-4">Clear Cart</a>
+        </div>
+    </div>
+
+    <nav class="bg-white/80 backdrop-blur-md border-b sticky top-0 z-50 h-20 flex items-center px-6">
+        <div class="max-w-7xl mx-auto w-full flex justify-between items-center">
+            <span class="font-extrabold text-2xl uppercase tracking-tighter">Solo Store</span>
+            <div class="flex gap-4 items-center">
+                <a href="/admin" class="text-slate-400 font-bold text-sm mr-4">Admin</a>
+                <button onclick="toggleCart()"
+                    class="bg-slate-900 text-white px-6 py-3 rounded-2xl text-sm font-bold flex gap-3">
+                    <span>Cart</span><span class="bg-white/20 px-2 rounded-lg text-xs">{{ cart_count }}</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 py-16">
+        <h1 class="text-5xl font-extrabold mb-12 tracking-tight">Discover Gear.</h1>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {% for p in products %}
+            <div
+                class="group bg-white rounded-[2.5rem] border p-4 transition-all duration-500 {{ 'opacity-70' if p.stock <= 0 else 'hover:shadow-2xl' }}">
+                <div
+                    class="relative h-64 bg-slate-50 rounded-[2rem] mb-6 overflow-hidden border border-slate-100 flex items-center justify-center">
+                    <img src="{{ url_for('static', filename='uploads/' + p.image) }}"
+                        class="w-full h-full object-cover {{ 'grayscale opacity-50' if p.stock <= 0 }}"
+                        onerror="this.src='https://ui-avatars.com/api/?name=P'">
+                    <div class="absolute top-5 left-5">
+                        <span
+                            class="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest backdrop-blur-md {{ 'bg-emerald-500/10 text-emerald-600' if p.stock > 0 else 'bg-red-600 text-white shadow-lg' }}">
+                            {{ p.stock if p.stock > 0 else 'Sold Out' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="px-4 pb-4">
+                    <div class="flex justify-between items-end mb-6">
+                        <div>
+                            <p class="text-indigo-600 text-[10px] font-black uppercase mb-1">{{ p.category }}</p>
+                            <h3 class="text-xl font-bold">{{ p.name }}</h3>
+                        </div>
+                        <div class="text-xl font-black">${{ p.price }}</div>
+                    </div>
+                    {% if p.stock > 0 %}
+                    <a href="{{ url_for('add_to_cart', p_id=p.id) }}"
+                        class="flex justify-center w-full bg-slate-100 py-4 rounded-2xl font-bold text-sm hover:bg-slate-900 hover:text-white transition">Add
+                        to Cart</a>
+                    {% else %}
+                    <button disabled
+                        class="w-full bg-slate-200 py-4 rounded-2xl font-bold text-slate-400 cursor-not-allowed">Out of
+                        Stock</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+    <script>
+        function toggleCart() {
+            const d = document.getElementById('cartDrawer'); const o = document.getElementById('overlay');
+            if (d.classList.contains('translate-x-full')) { d.classList.remove('translate-x-full'); o.classList.remove('hidden'); setTimeout(() => o.classList.add('opacity-100'), 10); document.body.style.overflow = 'hidden'; }
+            else { d.classList.add('translate-x-full'); o.classList.remove('opacity-100'); setTimeout(() => o.classList.add('hidden'), 300); document.body.style.overflow = 'auto'; }
+        }
+    </script>
+    {% with m = get_flashed_messages() %}{% if m %}
+    <script>alert("🚀 Order Confirmed! Stock has been updated.");</script>{% endif %}{% endwith %}
+</body>
+
+</html>
